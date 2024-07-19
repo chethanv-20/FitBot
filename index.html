@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gym Bot</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #192f66;
+        }
+        .nav {
+            text-align: center;
+            padding: 20px;
+            display: flex;
+            gap: 10px;
+            background-color: #000000;
+            color: rgb(255, 255, 255);
+            border-bottom: 2px solid white;
+            justify-content: center;
+        }
+        .container {
+            margin: 50px auto;
+            width: 50%;
+            padding: 30px;
+            display: flex;
+            gap: 20px;
+            flex-direction: column;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            position: relative;
+        }
+        .inner-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .my-img {
+            border-radius: 50%;
+            height: 200px;
+        }
+        .response {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            white-space: pre-line;
+        }
+        #inside-text {
+            color: red;
+            font-weight: bolder;
+        }
+        .logo {
+            height: 50px;
+        }
+        .warning {
+            color: red;
+            font-weight: bolder;
+        }
+        .loader {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <img class="logo" src="https://t3.ftcdn.net/jpg/02/43/26/66/240_F_243266606_qrREg3SESvf13xf7i7gBpG2aNsqFC1it.jpg" alt="">
+        <h1>Virtual <span id="inside-text">Fitness Assistant</span></h1>
+    </div>
+    <div class="container">
+        <div class="inner-container">
+            <img class="my-img" src="https://www.shutterstock.com/image-vector/hand-painted-robot-weights-gym-260nw-2305289199.jpg" alt="Profile Picture">
+            <h4 id="thinking-text">Enter your details to get a personalized plan</h4>
+        </div>
+        <form id="story-form" class="form">
+            <p class="warning">Note: This is a generic diet and exercise plan only... Consult professionals for more assistance</p>
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="inputName">Enter name</label>
+                    <input type="text" class="form-control" id="inputName" placeholder="John" required>
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="inputAge">Enter your age</label>
+                    <input type="number" class="form-control age" id="inputAge" placeholder="21" required min=15 >
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="inputHeight">Enter height (in cm)</label>
+                    <input type="number" class="form-control height" id="inputHeight" placeholder="170" required min=100>
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="inputWeight">Enter weight (in kg)</label>
+                    <input type="number" min="20" max="200" class="form-control weight" id="inputWeight" placeholder="50" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-4">
+                    <label for="inputMonth">Select months</label>
+                    <select class="form-control month" id="inputMonth" required>
+                        <option selected>Months</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                    </select>
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="inputGender">Select Gender</label>
+                    <select class="form-control gender" id="inputGender" required>
+                        <option selected>Select Gender</option>
+                        <option value="1">Male</option>
+                        <option value="2">Female</option>
+                    </select>
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="inputLevel">Select Level</label>
+                    <select class="form-control level" id="inputLevel" required>
+                        <option selected>Select Level</option>
+                        <option value="1">Beginner</option>
+                        <option value="2">Intermediate</option>
+                        <option value="3">Advanced</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group form-check">
+                <input class="form-check-input" type="checkbox" id="inputVegetarian">
+                <label class="form-check-label" for="inputVegetarian">Vegetarian</label>
+            </div>
+            <button type="submit" class="btn btn-primary">Generate Plan</button>
+            <button type="button" class="btn btn-success" id="motivate-me">Motivate me</button>
+        </form>
+    
+        <div class="response" id="response"></div>
+        <div class="loader" id="loader">
+            <div class="spinner-border text-primary" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+    </div>
+
+    <script type="importmap">
+        {
+          "imports": {
+            "@google/generative-ai": "https://esm.run/@google/generative-ai"
+          }
+        }
+    </script>
+    <script type="module">
+        import { GoogleGenerativeAI } from "@google/generative-ai";
+        const API_KEY = "AIzaSyCowAO-bwv3CHj6AIL_8tzXVu1P_sFTvZQ";
+        const genAI = new GoogleGenerativeAI(API_KEY);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        async function run(age, height, weight, month, level, isVegetarian) {
+            let dietType = isVegetarian ? "vegetarian" : "non-vegetarian";
+            let prompt = `Create a gym and ${dietType} diet plan tailored for a duration of ${month} months. The individual is ${age} years old, ${height} cm tall, weighs ${weight} kg, and is at a ${level} fitness level. 
+            1) List of exercises to be completed in all months:
+            2) List of diet options:
+            Each item should be on a new line. Do not include any # or * characters in the response.`;
+
+            console.log(prompt);
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            var text = await response.text();
+            text = text.replace(/[#*]/g, ""); // Remove # and * characters
+            document.getElementById('response').innerText = text;
+            document.getElementById('loader').style.display = 'none'; // Hide the loader
+        }
+
+        document.getElementById('story-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            document.getElementById('thinking-text').innerText = "Wait while we recommend an awesome plan for you ...";
+            const age = document.querySelector(".age").value;
+            const height = document.querySelector(".height").value;
+            const weight = document.querySelector(".weight").value;
+            const level = document.querySelector(".level").value;
+            const month = document.querySelector(".month").value;
+            if (weight < 35) {
+                alert("Weight is less than 35, going to the gym is not recommended for you");
+            }
+            const isVegetarian = document.getElementById('inputVegetarian').checked;
+            document.getElementById('loader').style.display = 'block'; // Show the loader
+            run(age, height, weight, month, level, isVegetarian);
+        });
+
+        const motivateButton = document.getElementById('motivate-me');
+        const images = [
+            'images/img1.jpg',
+            'images/img2.jpg',
+            'images/img3.jpg',
+            'images/img4.jpg',
+            'images/img5.jpg',
+            'images/img6.jpg',
+            'images/img7.jpg',
+            'images/img8.jpg',
+        ];
+
+        motivateButton.addEventListener('click', function() {
+            console.log("button clicked");
+            const randomImage = images[Math.floor(Math.random() * images.length)];
+            console.log(images);
+            document.getElementById('response').innerHTML = `<img src="${randomImage}" alt="Motivational Image" style="height: 300px;" class="img-fluid">`;
+        });
+    </script>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
